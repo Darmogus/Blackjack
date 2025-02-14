@@ -62,10 +62,3 @@ class Card:
     
     def __gt__(self, other) -> bool:
         return self.value > other.value
-
-
-# --- Tests ---
-if __name__ == "__main__":
-    pass
-    
-    

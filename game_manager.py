@@ -20,9 +20,10 @@ class GameManager:
         
     @property
     def alive_players(self) -> list[Player]:
+        """Return the players who are still alive""" # A player that got a blackjack is not considered alive
         return [player for player in self.players 
                 if player.totalMoney > 0 
-                and any(sum(card.value for card in stack) < 22 for stack in player.stacks.values())]
+                and any(player.bets.values())]
 
     def deal_starting_cards(self) -> None:
         """Deal two cards to each player and the dealer"""
@@ -34,6 +35,7 @@ class GameManager:
         self.dealer.stacks[0][1].hidden = True  # Hide the second card of the dealer
 
     def player_turn(self, player: Player, stackIndex: int) -> None:
+        """Play the turn of a player"""
         print(colored("\n🎮 Tour du joueur !", "cyan"))
         playerAction: PlayerActions = player.choose_action(stackIndex)
         
@@ -59,7 +61,8 @@ class GameManager:
             case _:
                 raise ValueError("Invalid action")
          
-    def dealer_turn(self) -> None:
+    def dealer_turn(self) -> None: 
+        """Play the dealer turn"""
         print(colored("\n🏆 Tour du croupier !", "yellow"))
         self.dealer.stacks[0][1].hidden = False
 
@@ -72,18 +75,18 @@ class GameManager:
             
         if sum([card.value for card in self.dealer.stacks[0]]) == 21:
             print(colored("\n🔥 Blackjack !", "green"))
-            self.display_table()
             return
         
 
             
     def compare_hands(self) -> None:
+        """Compare the hands of the players and the dealer"""
         dealerTotal = sum([card.value for card in self.dealer.stacks[0]])
-        print(colored("\n💰 Résultat final :", "magenta"))
+        print(colored("\n💰 Final result :", "magenta"))
 
         if len(self.alive_players) == 0:
             self.display_table()
-            print(colored("\n🏆 Le croupier a gagné !", "yellow"))
+            print(colored("\n🏆 The dealer won !", "yellow"))
             for player in self.players:
                 for stackIndex, stack in player.stacks.items():
                     print(colored(f"❌ - {player.bets[stackIndex]}€", 'red'))
@@ -109,9 +112,10 @@ class GameManager:
                     player.totalMoney -= player.bets[stackIndex]
                     print(colored(f"❌ - {player.bets[stackIndex]}€", 'red'))
                 else:
-                    print(colored("🔄 Égalité, personne ne gagne.", "blue"))
+                    print(colored("🔄 It's a tie, nobody wins.", "blue"))
             
     def is_blackjack(self, player: Player, stackIndex: int) -> bool:
+        """Check if the player has a blackjack"""
         if sum([card.value for card in player.stacks[stackIndex]]) == 21:
             print(colored("\n🔥 Blackjack !", "green"))
             if len(player.stacks[stackIndex]) == 2:
@@ -125,64 +129,62 @@ class GameManager:
         return False
             
     def is_dead(self, player: Player, stackIndex: int) -> bool:
+        """Check if the player is dead"""
         if sum([card.value for card in player.stacks[stackIndex]]) > 21:
-            print(colored(f"\n💀 Stack n°{stackIndex} a dépassé 21 !", "red"))
             moneyAmount: int = player.bets[stackIndex]
+            print(colored(f"\n💀 Stack n°{stackIndex} exceeded 21!", "red"))
+            print(colored(f"❌ - {moneyAmount}€", 'red'))
             player.totalMoney -= moneyAmount
             player.end_stack(stackIndex)
-            print(colored(f"❌ - {moneyAmount}€", 'red'))
-            return True 
+            return True
+        return False
     
-    def display_table(self) -> None:
-        # os.system('cls') # TODO : faire en sorte que ca ne clear plus le "blackjack" ou le "bust"
-        
-        print(colored("\n==================== TABLE DE JEU ====================", "yellow"))
+    def display_table(self) -> None: # TODO : Peut être faire en sorte que une ligne précise à qui est le tour de jouer (joueur ou croupier)
+        """Display the game table"""
+        print(colored("\n==================== GAME TABLE ====================", "yellow"))
 
         # Affichage du croupier
-        print(colored("\n🃏 Main du croupier:", "red"))
+        print(colored("\n🃏 Dealer's hand:", "red"))
         dealer_cards = " | ".join(str(card) for card in self.dealer.stacks[0])
         dealer_total = sum([card.value for card in self.dealer.stacks[0]])
         print(f"Cartes: {dealer_cards} | Total: {dealer_total}")
 
-        print(colored("\n🎭 Joueurs:", "cyan"))
+        print(colored("\n🎭 Players:", "cyan"))
 
         # Affichage des joueurs
         for i, player in enumerate(self.players, 1):
-            print(colored(f"\n👤 Joueur {i} - Argent: {player.totalMoney}€", "blue"))
+            print(colored(f"\n👤 Player {i} - Money: {player.totalMoney}€", "blue"))
             for stackIndex, stack in player.stacks.items():
                 if sum([card.value for card in stack]) == 21:
                     continue
                 cards = " | ".join(str(card) for card in stack)
                 total = sum([card.value for card in stack])
                 bet = player.bets[stackIndex]
-                print(f"  - Stack n°{stackIndex}: {cards} | Total: {total} | Mise: {bet}€")
+                print(f"  - Stack n°{stackIndex}: {cards} | Total: {total} | Bet: {bet}€")
 
         print(colored("\n======================================================", "yellow"))
 
-    def play(self):
+    def play(self): # TODO : ajouter la gestion des bets (actuellement les bets sont toujours de 10€)
+        """Play the game"""
         for player in self.players:
             while player.isPlaying:
                 for ind, _ in list(player.stacks.items())[:]:
                     while player.playingStacks[ind]:
-                        if self.is_blackjack(player, ind):
+                        self.display_table()
+                        if self.is_blackjack(player, ind): # TODO : afficher le blackjack (le stack) juste avant la fin de game (actuellement n'affiche rien)
                             break
                         if self.is_dead(player, ind):
                             break
                         
-                        self.display_table()
                         self.player_turn(player, ind)
                         os.system('cls')
-
-            if len(player.stacks) == 0:
-                break
         
-        
-        self.display_table()
-        sleep(1)
-        self.dealer_turn()
-
-        sleep(1)
-        self.compare_hands()
+        if self.alive_players:
+            self.display_table()
+            sleep(0.5)
+            self.dealer_turn()
+            sleep(1)
+            self.compare_hands()
                     
 
 # --- Tests ---

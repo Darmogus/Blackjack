@@ -7,15 +7,11 @@ from card import Card
 
 # --- Constants ---
 class PlayerActions(Enum):
-    HIT = "hit"         # Ask for another card
-    STAND = "stand"     # Keep the current hand
-    DOUBLE = "double"   # Double the bet and ask for another card
-    SPLIT = "split"     # Split the hand into two hands (only if the two first cards are the same)
-    SURRENDER = "surrender"
-    
-    @classmethod
-    def values(self):
-        return [action.value for action in PlayerActions] 
+    HIT = "hit"             # Ask for another card
+    STAND = "stand"         # Keep the current hand
+    DOUBLE = "double"       # Double the bet and ask for another card
+    SPLIT = "split"         # Split the hand into two hands (only if the two first cards are the same)
+    SURRENDER = "surrender" # Give up and lose half of the bet
 
 
 # --- Classes ---
@@ -31,6 +27,7 @@ class Player:
         return any(self.playingStacks.values())
         
     def get_possible_actions(self, stackIndex: int) -> list[PlayerActions]:
+        """Return the possible actions for a given stack"""
         actions: list[PlayerActions] = [PlayerActions.HIT, PlayerActions.STAND]
         if len(self.stacks[stackIndex]) == 2:
             actions.append(PlayerActions.DOUBLE)
@@ -38,7 +35,8 @@ class Player:
                 actions.append(PlayerActions.SPLIT)
         return actions
         
-    def choose_action(self, stack_index: int) -> PlayerActions:       
+    def choose_action(self, stack_index: int) -> PlayerActions:
+        """Choose an action to do on a given stack"""
         possibleActions: list[PlayerActions] = self.get_possible_actions(stack_index)
         possibleActionsValues: list[str] = [action.value for action in possibleActions]
         while True:
@@ -55,14 +53,12 @@ class Player:
         return PlayerActions(actionInput)
     
     def split(self):
+        """Split the hand into two stacks"""
         self.stacks[1] = [self.stacks[0].pop(1)]
         self.playingStacks[1] = True
         self.bets[1] = self.bets[0]
         
     def end_stack(self, stack_index: int):
+        """End a stack, the player can't play on it anymore, either because he surrendered, he died or because he got a blackjack"""
         self.playingStacks[stack_index] = False
-        # self.bets.pop(stack_index)
-        
-if __name__ == "__main__":
-    P = Player()
-    P.play_turn()
+        self.bets.pop(stack_index)

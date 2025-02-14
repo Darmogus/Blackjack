@@ -40,9 +40,3 @@ class Deck(list):
         """Pick a card and remove it from the deck"""
         card = self.choose_card(card_index)
         return self.pop(self.index(card))
-
-
-# --- Tests ---
-if __name__ == '__main__':
-    deck = Deck()
-    print(deck)
