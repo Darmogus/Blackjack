@@ -77,30 +77,25 @@ class GameManager:
             print(colored("\n🔥 Blackjack !", "green"))
             return
         
-
+    def dealer_win(self) -> None:
+        """The dealer wins the game"""
+        self.display_table()
+        print(colored("\n🏆 The dealer won !", "yellow"))
+        for player in self.players:
+            for stackIndex, stack in player.stacks.items():
+                print(colored(f"❌ - {player.bets[stackIndex]}€", 'red'))
+                return
+    
+    def dealer_lose(self) -> None:
+        """The dealer loses the game"""
+        print(colored("❌ Le croupier a dépassé 21 !", "red"))
+        for player in self.alive_players:
+            for stackIndex, stack in player.stacks.items():
+                player.totalMoney += player.bets[stackIndex]
+                print(colored(f"✅ + {player.bets[stackIndex]}€", 'green'))
             
-    def compare_hands(self) -> None:
+    def compare_hands(self, dealerTotal) -> None:
         """Compare the hands of the players and the dealer"""
-        dealerTotal = sum([card.value for card in self.dealer.stacks[0]])
-        print(colored("\n💰 Final result :", "magenta"))
-
-        if len(self.alive_players) == 0:
-            self.display_table()
-            print(colored("\n🏆 The dealer won !", "yellow"))
-            for player in self.players:
-                for stackIndex, stack in player.stacks.items():
-                    print(colored(f"❌ - {player.bets[stackIndex]}€", 'red'))
-                    return
-
-
-        if dealerTotal > 21:
-            print(colored("❌ Le croupier a dépassé 21 !", "red"))
-            for player in self.alive_players:
-                for stackIndex, stack in player.stacks.items():
-                    player.totalMoney += player.bets[stackIndex]
-                    print(colored(f"✅ + {player.bets[stackIndex]}€", 'green'))
-            return
-        
         for player in self.alive_players:
             for stackIndex, stack in player.stacks.items():
                 playerTotal = sum([card.value for card in stack])
@@ -112,7 +107,23 @@ class GameManager:
                     player.totalMoney -= player.bets[stackIndex]
                     print(colored(f"❌ - {player.bets[stackIndex]}€", 'red'))
                 else:
-                    print(colored("🔄 It's a tie, nobody wins.", "blue"))
+                    print(colored("🔄 It's a tie, nobody wins.", "blue"))  
+    
+    def comparison_turn(self) -> None:
+        """Compar the hands of the players and the dealer"""
+        dealerTotal = sum([card.value for card in self.dealer.stacks[0]])
+        print(colored("\n💰 Final result :", "magenta"))
+
+        if len(self.alive_players) == 0:
+            self.dealer_win()
+            return
+
+        if dealerTotal > 21:
+            self.dealer_lose()
+            return
+        
+        self.compare_hands(dealerTotal)
+
             
     def is_blackjack(self, player: Player, stackIndex: int) -> bool:
         """Check if the player has a blackjack"""
@@ -184,7 +195,7 @@ class GameManager:
             sleep(0.5)
             self.dealer_turn()
             sleep(1)
-            self.compare_hands()
+            self.comparison_turn()
                     
 
 # --- Tests ---
