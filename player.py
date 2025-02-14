@@ -34,12 +34,12 @@ class Player:
                 actions.append(PlayerActions.SPLIT)
         return actions
         
-    def choose_action(self) -> PlayerActions:       
+    def choose_action(self, stack_index: int) -> PlayerActions:       
         possibleActions: list[PlayerActions] = self.get_possible_actions()
         possibleActionsValues: list[str] = [action.value for action in possibleActions]
         while True:
             try:
-                actionInput: str = str(input(f"Que voulez vous faire ({', '.join(possibleActionsValues)}) : "))
+                actionInput: str = str(input(f"Que voulez vous faire sur le stack n°{stack_index} ({', '.join(possibleActionsValues)}) : "))
                 if actionInput in possibleActionsValues:
                     break
             except KeyboardInterrupt:
@@ -53,6 +53,10 @@ class Player:
     def split(self):
         self.stacks.append([self.stacks[0].pop()])
         self.bets.append(self.bets[0])
+        
+    def remove_stack(self, stack_index: int):
+        self.stacks.pop(stack_index)
+        self.bets.pop(stack_index)
         
 if __name__ == "__main__":
     P = Player()

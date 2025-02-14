@@ -1,8 +1,10 @@
+# --- External libraries ---
+import os
+from termcolor import colored
+
 # --- Internal libraries ---
 from player import Player, PlayerActions
 from deck import Deck
-
-# --- External libraries ---
 
 # --- Constants ---
 
@@ -12,11 +14,15 @@ class GameManager:
         self.players = [Player() for _ in range(player_nbr)]
         self.dealer = Player()
         self.deck = Deck()
-        
-        self.active_players = self.players.copy()
-        
+            
         self.deck.shuffle()
         self.deal_starting_cards()
+        
+    @property
+    def alive_players(self):
+        return [player for player in self.players 
+                if player.total_money > 0 
+                and any(sum(card.value for card in stack) < 22 for stack in player.stacks)]
 
     def deal_starting_cards(self):
         """Deal two cards to each player and the dealer"""
@@ -27,16 +33,15 @@ class GameManager:
         
         self.dealer.stacks[0][1].hidden = True # Hide the second card of the dealer
 
-    def player_turn(self, player: Player):
-        playerAction: PlayerActions = player.choose_action()
+    def player_turn(self, player: Player, stack_index: int):
+        playerAction: PlayerActions = player.choose_action(stack_index)
         
         match playerAction:
             case PlayerActions.HIT:
                 player.stacks[0].append(self.deck.pick_card(1))
                 
             case PlayerActions.STAND:
-                player.isPlaying = False
-            
+                pass            
             case PlayerActions.DOUBLE:
                 pass
             
@@ -45,34 +50,84 @@ class GameManager:
             
             case _:
                 raise ValueError("Invalid action")
+         
+    def dealer_turn(self):
+        print("Dealer's turn")
+        self.dealer.stacks[0][1].hidden = False
+        while sum([card.value for card in self.dealer.stacks[0]]) < 17:
+            self.dealer.stacks[0].append(self.deck.pick_card(1))
+            
+    def compare_hands(self):
+        dealer_total = sum([card.value for card in self.dealer.stacks[0]])
+        if dealer_total > 21:
+            print("Dealer is dead")
+            for player in self.alive_players:
+                for stack in player.stacks:
+                    player.total_money += player.bets[player.stacks.index(stack)]
+                    print(colored(f"+ {player.bets[player.stacks.index(stack)]}€", 'green'))
+            return
+        
+        for player in self.alive_players:
+            for stack in player.stacks:
+                player_total = sum([card.value for card in stack])
+                if player_total > dealer_total:
+                    player.total_money += player.bets[player.stacks.index(stack)]
+                    print(colored(f"+ {player.bets[player.stacks.index(stack)]}€", 'green'))
+                elif player_total < dealer_total:
+                    player.total_money -= player.bets[player.stacks.index(stack)]
+                    print(colored(f"- {player.bets[player.stacks.index(stack)]}€", 'red'))
+                else:
+                    print("It's a tie, no money won or lost.")
+            
+    def is_blackjack(self, player: Player, stack_index: int):
+        if sum([card.value for card in player.stacks[stack_index]]) == 21:
+            print("Blackjack")
+            if len(player.stacks[stack_index]) == 2:
+                player.total_money += player.bets[stack_index] * 1.5
+                print(colored(f"+ {player.bets[stack_index] * 1.5}€", 'green'))
+            else:
+                player.total_money += player.bets[stack_index]
+                print(colored(f"+ {player.bets[stack_index]}€", 'green'))
+            return True
+        return False
             
     def is_dead(self, player: Player, stack_index: int) -> bool:
-        try:
-            return sum([card.value for card in player.stacks[stack_index]]) > 21
-        except IndexError:
-            raise ValueError("Invalid stack index")
-
+        if sum([card.value for card in player.stacks[stack_index]]) > 21:
+            print("Dead")
+            return True 
+    
     def display_table(self):
-        for player in self.players:
+        for player in self.alive_players:
             for i in range(len(player.stacks)):
-                print(f'Stack n°{i} : {player.stacks[i]} Total : {sum([card.value for card in player.stacks[i]])} | Bet : {player.bets[i]}€')
-        print(f'Stack : {self.dealer.stacks[0]} Total : {sum([card.value for card in self.dealer.stacks[0]])}')
+                print(f"Stack n°{i} : {player.stacks[i]} Total : {sum([card.value for card in player.stacks[i]])} | Bet : {player.bets[i]}€")
+        print(f"Dealer's hand : {self.dealer.stacks[0]} Total : {sum([card.value for card in self.dealer.stacks[0]])}")
 
     def play(self):
         self.display_table()
+        
         for player in self.players:
             player.isPlaying = True
             while player.isPlaying:
-                self.player_turn(player)
-                self.display_table()
-                if self.is_dead(player, 0):
-                    self.active_players.remove(player)
+                for ind, stack in enumerate(player.stacks[:]):                    
+                    if self.is_blackjack(player, ind):
+                        break
+                    
+                    self.player_turn(player, ind)
+                    self.display_table()
+                    
+                    if self.is_blackjack(player, ind):
+                        continue
+                    
+                    if self.is_dead(player, ind):
+                        continue
+                
+                if len(player.stacks) == 0 or len(player.stacks) == 2:
                     player.isPlaying = False
-                    print("Busted")
-                    break
-        print("Dealer turn")
-        self.dealer.stacks[0][1].hidden = False
-
+                
+        self.dealer_turn()
+        self.display_table()
+        self.compare_hands()
+                    
         
 # --- Tests ---
 if __name__ == '__main__':

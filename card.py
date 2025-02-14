@@ -31,10 +31,16 @@ class Card:
     SUITS_COLORS = {CardSuits.HEARTS : "red", CardSuits.DIAMONDS : "red", CardSuits.CLUBS : "blue", CardSuits.SPADES : "blue"}
     
     def __init__(self, value: int, suit: CardSuits) -> None:
-        self.value: int = value
+        self.base_value: int = value
         self.suit: CardSuits = suit
         self.hidden: bool = False
         self.strings: dict = {False : f"{colored(str(self.value) + ' ' + self.suit.value, Card.SUITS_COLORS[self.suit])}", True : f"{colored('??', 'grey')}"}
+
+    @property	
+    def value(self):
+        if self.hidden:
+            return 0
+        return self.base_value
 
     def __str__(self) -> str:
         return self.strings[self.hidden]
