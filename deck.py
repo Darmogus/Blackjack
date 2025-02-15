@@ -5,9 +5,6 @@ from random import shuffle
 from card import Card, CardValues, CardSuits
 
 
-# --- Constants ---
-
-
 # --- Classes ---
 class Deck(list):
     def __init__(self):
@@ -17,7 +14,7 @@ class Deck(list):
     def generate(self):
         """Generate a deck of 52 cards """
         for suit in CardSuits:
-            for value in CardValues.__members__.values():
+            for value in CardValues:
                 self.append(Card(value, suit))
 
     def shuffle(self):

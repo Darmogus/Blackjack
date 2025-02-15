@@ -7,6 +7,7 @@ from termcolor import colored
 from player import Player, PlayerActions
 from deck import Deck
 
+
 # --- Classes ---
 class GameManager:
     def __init__(self, player_nbr: int) -> None:
@@ -14,9 +15,11 @@ class GameManager:
         self.dealer = Player()
         self.deck = Deck()
             
+        os.system('cls')
+        
         self.deck.shuffle()
         self.deal_starting_cards()
-        os.system('cls')
+        self.set_starting_bets()
         
     @property
     def alive_players(self) -> list[Player]:
@@ -33,6 +36,44 @@ class GameManager:
             self.dealer.stacks[0].append(self.deck.pick_card(1))
         
         self.dealer.stacks[0][1].hidden = True  # Hide the second card of the dealer
+        
+    def set_starting_bets(self) -> None:
+        """Set the starting bets of each player with a visual representation"""
+        while True:
+            os.system('cls')  # Efface l'écran avant d'afficher la table
+            print(colored("\n==================== BETTING TABLE ====================", "yellow"))
+
+            # Affichage des joueurs et de leur argent
+            for ind, player in enumerate(self.players):
+                if player.bets[0] == 0:
+                    print(colored(f"\n👤 Player {ind} - Money: {player.totalMoney}€", "blue"))
+                else:
+                    print(colored(f"\n👤 Player {ind} - Money: {player.totalMoney}€ - Bet: {player.bets[0]}€", "blue"))
+
+            print(colored("\n======================================================", "yellow"))
+
+            # Demande les mises
+            for ind, player in enumerate(self.players):
+                while True:
+                    try:
+                        bet = int(input(colored(f"\n🎲 Player {ind} - Enter your bet: ", "cyan")))
+                        
+                        if bet > player.totalMoney:
+                            print(colored("❌ You don't have enough money.", "red"))
+                            continue
+                        
+                        player.bets[0] = bet
+                        break
+                    except ValueError:
+                        print(colored("❌ Please enter a valid number.", "red"))
+                        
+                    except KeyboardInterrupt:
+                        print("You pressed Ctrl+C")
+                        exit()
+
+            os.system('cls')  # Efface l'écran après la saisie des mises
+            break
+
 
     def player_turn(self, player: Player, stackIndex: int) -> None:
         """Play the turn of a player"""
@@ -94,7 +135,7 @@ class GameManager:
                 player.totalMoney += player.bets[stackIndex]
                 print(colored(f"✅ + {player.bets[stackIndex]}€", 'green'))
             
-    def compare_hands(self, dealerTotal) -> None:
+    def compare_hands(self, dealerTotal) -> None: # TODO : afficher qui gagne quoi (actuellement affiche juste le gain ou la perte)
         """Compare the hands of the players and the dealer"""
         for player in self.alive_players:
             for stackIndex, stack in player.stacks.items():
@@ -200,5 +241,5 @@ class GameManager:
 
 # --- Tests ---
 if __name__ == '__main__':
-    game = GameManager(1)
+    game = GameManager(3)
     game.play()

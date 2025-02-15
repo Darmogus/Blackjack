@@ -16,7 +16,7 @@ class PlayerActions(Enum):
 
 # --- Classes ---
 class Player:
-    def __init__(self, totalMoney: int = 1000, bet: int = 10) -> None:
+    def __init__(self, bet: int = 0, totalMoney: int = 1000) -> None:
         self.stacks: dict[list[Card | None]] = {0 : []}
         self.playingStacks: dict[int, bool] = {0 : True}
         self.totalMoney: int = totalMoney
