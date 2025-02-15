@@ -3,6 +3,8 @@ from enum import Enum
 
 # --- Internal librairies --- 
 from card import Card
+from stack import Stack
+from deck import Deck
 
 
 # --- Constants ---
@@ -17,21 +19,27 @@ class PlayerActions(Enum):
 # --- Classes ---
 class Player:
     def __init__(self, bet: int = 0, totalMoney: int = 1000) -> None:
-        self.stacks: dict[list[Card | None]] = {0 : []}
-        self.playingStacks: dict[int, bool] = {0 : True}
+        self.stacks: dict[int, Stack] = {0: Stack(bet)}
         self.totalMoney: int = totalMoney
-        self.bets: dict[int] = {0 : bet}
         
     @property
     def isPlaying(self):
-        return any(self.playingStacks.values())
+        return any([stack.isPlaying for stack in self.stacks.values()])
+    
+    @property
+    def isAlive(self):
+        return any([stack.isAlive for stack in self.stacks.values()])
+        
+    def pick_card(self, deck: Deck, stackIndex: int = 0) -> None:
+        """Pick a card and add it to a stack"""
+        self.stacks[stackIndex].append(deck.pick_card(1))
         
     def get_possible_actions(self, stackIndex: int) -> list[PlayerActions]:
         """Return the possible actions for a given stack"""
         actions: list[PlayerActions] = [PlayerActions.HIT, PlayerActions.STAND]
         if len(self.stacks[stackIndex]) == 2:
             actions.append(PlayerActions.DOUBLE)
-            if self.stacks[stackIndex][0].value == self.stacks[stackIndex][1].value and self.totalMoney >= self.bets[0]:
+            if self.stacks[stackIndex].is_splitable() and self.totalMoney >= self.bets[0]:
                 actions.append(PlayerActions.SPLIT)
         return actions
         
@@ -54,11 +62,5 @@ class Player:
     
     def split(self):
         """Split the hand into two stacks"""
-        self.stacks[1] = [self.stacks[0].pop(1)]
-        self.playingStacks[1] = True
-        self.bets[1] = self.bets[0]
-        
-    def end_stack(self, stack_index: int):
-        """End a stack, the player can't play on it anymore, either because he surrendered, he died or because he got a blackjack"""
-        self.playingStacks[stack_index] = False
-        self.bets.pop(stack_index)
+        newStack: Stack = Stack(bet=self.stacks[0].bet, card=self.stacks[0].pop(1))
+        self.stacks[1] = newStack
