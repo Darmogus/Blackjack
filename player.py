@@ -39,7 +39,7 @@ class Player:
         actions: list[PlayerActions] = [PlayerActions.HIT, PlayerActions.STAND]
         if len(self.stacks[stackIndex]) == 2:
             actions.append(PlayerActions.DOUBLE)
-            if self.stacks[stackIndex].is_splitable() and self.totalMoney >= self.bets[0]:
+            if self.stacks[stackIndex].is_splitable() and self.totalMoney >= self.stacks[stackIndex].bet:
                 actions.append(PlayerActions.SPLIT)
         return actions
         

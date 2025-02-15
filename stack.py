@@ -35,5 +35,4 @@ class Stack(list):
     def kill(self):
         """Kill the stack (for example if the player surrendered, died or got a blackjack)"""
         self.isPlaying = False
-        self.bet = -1
         

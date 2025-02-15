@@ -153,6 +153,7 @@ class GameManager:
     
     def comparison_turn(self) -> None:
         """Compar the hands of the players and the dealer"""
+        os.system('cls')
         dealerTotal = self.dealer.stacks[0].value
         print(colored("\n💰 Final result :", "magenta"))
 
@@ -166,33 +167,38 @@ class GameManager:
         
         self.compare_hands(dealerTotal)
 
-            
-    def is_blackjack(self, player: Player, stackIndex: int) -> bool: # TODO : régler les ordres d'affiche (voire les refaire complètement) 
-                                                                     # actuellement, le blackjack s'affiche au dessus de la table suivante
-        """Check if the player has a blackjack"""
+    def is_blackjack(self, player: Player, stackIndex: int) -> bool:
         if player.stacks[stackIndex].value == 21:
-            betAmount: int = player.stacks[stackIndex].bet
-            print(colored("\n🔥 Blackjack !", "green"))
-            if len(player.stacks[stackIndex]) == 2:
-                player.totalMoney += betAmount * 1.5
-                print(colored(f"✅ + {betAmount * 1.5}€", 'green'))
-            else:
-                player.totalMoney += betAmount
-                print(colored(f"✅ + {betAmount}€", 'green'))
             player.stacks[stackIndex].kill()
             return True
         return False
             
-    def is_dead(self, player: Player, stackIndex: int) -> bool:
-        """Check if the player is dead"""
+    def is_dead(self, player: Player, stackIndex: int) -> bool:  
         if player.stacks[stackIndex].value > 21:
-            betAmount: int = player.stacks[stackIndex].bet
-            print(colored(f"\n💀 Stack n°{stackIndex} exceeded 21!", "red"))
-            print(colored(f"❌ - {betAmount}€", 'red'))
-            player.totalMoney -= betAmount
             player.stacks[stackIndex].kill()
             return True
         return False
+            
+    def process_blackjack(self, player: Player, stackIndex: int) -> None: # TODO : régler les ordres d'affiche (voire les refaire complètement) 
+                                                                     # actuellement, le blackjack s'affiche au dessus de la table suivante
+        """Process the blackjack of a player"""
+        betAmount: int = player.stacks[stackIndex].bet
+        print(colored("\n🔥 Blackjack !", "green"))
+        if len(player.stacks[stackIndex]) == 2:
+            player.totalMoney += betAmount * 1.5
+            print(colored(f"✅ + {betAmount * 1.5}€", 'green'))
+        else:
+            player.totalMoney += betAmount
+            print(colored(f"✅ + {betAmount}€", 'green'))
+        player.stacks[stackIndex].kill()
+            
+    def process_dead(self, player: Player, stackIndex: int) -> None:
+        """Process the dead of a player"""
+        betAmount: int = player.stacks[stackIndex].bet
+        print(colored(f"\n💀 Stack n°{stackIndex} exceeded 21!", "red"))
+        print(colored(f"❌ - {betAmount}€", 'red'))
+        player.totalMoney -= betAmount
+        player.stacks[stackIndex].kill()
     
     def display_table(self) -> None: # TODO : Peut être faire en sorte que une ligne précise à qui est le tour de jouer (joueur ou croupier)
         """Display the game table"""
@@ -216,25 +222,39 @@ class GameManager:
                 total = stack.value
                 bet = stack.bet
                 print(f"  - Stack n°{stackIndex}: {cards} | Total: {total} | Bet: {bet}€")
-                # TODO : fix pour ne pas afficher la bet a -1
         print(colored("\n======================================================", "yellow"))
 
-    def play(self): # TODO : ajouter la gestion des bets (actuellement les bets sont toujours de 10€)
+    def play(self):
         """Play the game"""
         for player in self.players:
             while player.isPlaying:
-                for stackIndex, stack in player.stacks.items():
-                    while stack.isPlaying:
-                        self.display_table()
-                        if self.is_blackjack(player, stackIndex): # TODO : afficher le blackjack (le stack) juste avant la fin de game (actuellement n'affiche rien)
-                            break
-                        if self.is_dead(player, stackIndex):
-                            break
-                        
-                        self.player_turn(player, stackIndex)
-                        os.system('cls')
+                try:
+                    for stackIndex, stack in player.stacks.items():
+                        while stack.isPlaying:
+                            if self.is_blackjack(player, stackIndex): # TODO : afficher le blackjack (le stack) juste avant la fin de game (actuellement n'affiche rien)
+                                break
+                            if self.is_dead(player, stackIndex):
+                                break
+                            
+                            self.display_table()
+                            self.player_turn(player, stackIndex)
+                            os.system('cls')
+                
+                except KeyboardInterrupt:
+                    print("Bye !")
+                    exit()
+   
+            os.system('cls')
+            self.display_table()
+            if self.is_blackjack(player, stackIndex):
+                self.process_blackjack(player, stackIndex)
+            elif self.is_dead(player, stackIndex):
+                self.process_dead(player, stackIndex)
+                
+            input("\nPress Enter to continue...")
+            os.system('cls')
         
-        if self.alive_players:
+        if self.alive_players: # TODO : quand les 3 joueurs ont fini de jouer, le jeu rentre dans une boucle infinie
             self.display_table()
             sleep(0.5)
             self.dealer_turn()
