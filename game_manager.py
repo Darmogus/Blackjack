@@ -6,6 +6,7 @@ from termcolor import colored
 # --- Internal libraries ---
 from player import Player, PlayerActions
 from deck import Deck
+from card import Card
 
 
 # --- Classes ---
@@ -40,12 +41,20 @@ class GameManager:
         """Announce the tie of a player"""
         print(colored(f"🔵 Player {player.username} | ~ {amount}€", 'blue'))
 
+    def player_pick_card(self, player: Player, stackIndex: int = 0) -> None:
+        """Pick a card for a player"""
+        card: Card = self.deck.pick_card(1)
+        # Ace can be 1 or 11
+        if player.stacks[stackIndex].value + 11 > 21:
+            card.base_value = 1
+        player.stacks[stackIndex].append(card)
+
     def deal_starting_cards(self) -> None:
         """Deal two cards to each player and the dealer"""
         for _ in range(2):
             for player in self.players:
-                player.stacks[0].append(self.deck.pick_card(1))
-            self.dealer.stacks[0].append(self.deck.pick_card(1))
+                self.player_pick_card(player)
+            self.player_pick_card(self.dealer)
         
         self.dealer.stacks[0][1].hide()
         
@@ -94,14 +103,14 @@ class GameManager:
         
         match playerAction:
             case PlayerActions.HIT:
-                player.stacks[stackIndex].append(self.deck.pick_card(1))
+                self.player_pick_card(player, stackIndex)
                 
             case PlayerActions.STAND:
                 player.stacks[stackIndex].end()
                      
             case PlayerActions.DOUBLE:
+                self.player_pick_card(player, stackIndex)
                 player.stacks[stackIndex].bet *= 2
-                player.stacks[stackIndex].append(self.deck.pick_card(1))
                 player.stacks[stackIndex].end()
             
             case PlayerActions.SPLIT:
@@ -122,7 +131,7 @@ class GameManager:
 
         sleep(1)
         while self.dealer.stacks[0].value < 17:
-            self.dealer.pick_card(self.deck)
+            self.player_pick_card(self.dealer)
             self.display_table()
             print(colored("\n🏆 Tour du croupier !", "yellow"))
             sleep(1)
