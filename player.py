@@ -18,9 +18,10 @@ class PlayerActions(Enum):
 
 # --- Classes ---
 class Player:
-    def __init__(self, bet: int = 0, totalMoney: int = 1000) -> None:
+    def __init__(self, username: str, bet: int = 0, totalMoney: int = 1000) -> None:
         self.stacks: dict[int, Stack] = {0: Stack(bet)}
         self.totalMoney: int = totalMoney
+        self.username: str = username
         
     @property
     def isPlaying(self):

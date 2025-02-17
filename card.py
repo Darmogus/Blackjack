@@ -39,6 +39,7 @@ class Card:
         self.base_value: int = value.value
         self.suit: CardSuits = suit
         self.hidden: bool = False
+        self.colored: bool = True
 
     @property
     def value(self) -> int:
@@ -50,6 +51,8 @@ class Card:
         """Return a string representation of the card dynamically"""
         if self.hidden:
             return colored("??", "grey")
+        if not self.colored:
+            return f"{self.base_value} {self.suit.value}"
         return colored(f"{self.base_value} {self.suit.value}", self.SUITS_COLORS[self.suit])
 
     def hide(self) -> None:

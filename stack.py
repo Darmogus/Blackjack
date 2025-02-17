@@ -24,9 +24,19 @@ class Stack(list):
         """Return the cards of the stack"""
         return " ".join(str(card) for card in self)
     
+    def uncolor_cards(self):
+        """Uncolor the cards of the stack"""
+        for card in self:
+            card.colored = False
+    
     def is_splitable(self) -> bool:
         """Return True if the stack can be splitted"""
         return len(self) == 2 and self[0].value == self[1].value
+    
+    def reveal_cards(self):
+        """Reveal the cards of the stack"""
+        for card in self:
+            card.isRevealed = True
     
     def end(self):
         """End the stack (for example if the player standed)"""

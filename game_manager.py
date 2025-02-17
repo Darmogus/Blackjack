@@ -11,8 +11,8 @@ from deck import Deck
 # --- Classes ---
 class GameManager:
     def __init__(self, player_nbr: int) -> None:
-        self.players = [Player() for _ in range(player_nbr)]
-        self.dealer = Player()
+        self.players = [Player(i+1) for i in range(player_nbr)]
+        self.dealer = Player('Dealer')
         self.deck = Deck()
             
         os.system('cls')
@@ -27,6 +27,18 @@ class GameManager:
         return [player for player in self.players 
                 if player.totalMoney > 0 
                 and player.isAlive]
+        
+    def announce_player_win(self, player: Player, amount: int) -> None:
+        """Announce the win of a player"""
+        print(colored(f"✅ Player {player.username} | + {amount}€", 'green'))
+        
+    def announce_player_loss(self, player: Player, amount: int) -> None:
+        """Announce the loss of a player"""
+        print(colored(f"❌ Player {player.username} | - {amount}€", 'red'))
+        
+    def announce_player_tie(self, player: Player, amount: int) -> None:
+        """Announce the tie of a player"""
+        print(colored(f"🔵 Player {player.username} | ~ {amount}€", 'blue'))
 
     def deal_starting_cards(self) -> None:
         """Deal two cards to each player and the dealer"""
@@ -77,7 +89,7 @@ class GameManager:
 
     def player_turn(self, player: Player, stackIndex: int) -> None:
         """Play the turn of a player"""
-        print(colored("\n🎮 Tour du joueur !", "cyan"))
+        print(colored(f"\n🎮 Tour de Joueur {player.username} !", "cyan"))
         playerAction: PlayerActions = player.choose_action(stackIndex)
         
         match playerAction:
@@ -104,16 +116,18 @@ class GameManager:
     def dealer_turn(self) -> None: 
         """Play the dealer turn"""
         print(colored("\n🏆 Tour du croupier !", "yellow"))
+
         self.dealer.stacks[0][1].reveal()
+        self.display_table()
 
         sleep(1)
-        while sum([card.value for card in self.dealer.stacks[0]]) < 17:
-            os.system('cls')
+        while self.dealer.stacks[0].value < 17:
             self.dealer.pick_card(self.deck)
             self.display_table()
+            print(colored("\n🏆 Tour du croupier !", "yellow"))
             sleep(1)
             
-        if sum([card.value for card in self.dealer.stacks[0]]) == 21:
+        if self.dealer.stacks[0].value == 21:
             print(colored("\n🔥 Blackjack !", "green"))
             return
         
@@ -123,7 +137,8 @@ class GameManager:
         print(colored("\n🏆 The dealer won !", "yellow"))
         for player in self.players:
             for stackIndex, _ in player.stacks:
-                print(colored(f"❌ - {player.stacks[stackIndex].bet}€", 'red'))
+                moneyAmount: int = player.stacks[stackIndex].bet
+                self.announce_player_loss(player, moneyAmount)
                 return
     
     def dealer_lose(self) -> None:
@@ -132,31 +147,32 @@ class GameManager:
         for player in self.alive_players:
             for stackIndex, _ in player.stacks.items():
                 moneyAmount: int = player.stacks[stackIndex].bet
-                player.totalMoney += moneyAmount
-                print(colored(f"✅ + {moneyAmount}€", 'green'))
-            
+                self.announce_player_win(player, moneyAmount)
+                            
     def compare_hands(self, dealerTotal) -> None: # TODO : afficher qui gagne quoi (actuellement affiche juste le gain ou la perte)
         """Compare the hands of the players and the dealer"""
-        for player in self.alive_players:
-            for stackIndex, stack in player.stacks.items():
+        for player in self.players:
+            for _, stack in player.stacks.items():
                 playerTotal = stack.value
                 moneyAmount: int = stack.bet
                 
                 if playerTotal > dealerTotal:
-                    player.totalMoney += moneyAmount
-                    print(colored(f"✅ + {moneyAmount}€", 'green'))
+                    if player in self.alive_players:
+                        player.totalMoney += moneyAmount
+                    self.announce_player_win(player, moneyAmount)
                 elif playerTotal < dealerTotal:
-                    player.totalMoney -= moneyAmount
-                    print(colored(f"❌ - {moneyAmount}€", 'red'))
+                    if player in self.alive_players:
+                        player.totalMoney -= moneyAmount
+                    self.announce_player_loss(player, moneyAmount)
                 else:
-                    print(colored("🔄 It's a tie, nobody wins.", "blue"))  
+                    self.announce_player_tie(player, moneyAmount)
     
     def comparison_turn(self) -> None:
         """Compar the hands of the players and the dealer"""
-        os.system('cls')
-        dealerTotal = self.dealer.stacks[0].value
-        print(colored("\n💰 Final result :", "magenta"))
+        self.display_table()
+        print(colored("\n💰 Final result :", "magenta", attrs=['bold']))
 
+        dealerTotal = self.dealer.stacks[0].value
         if len(self.alive_players) == 0:
             self.dealer_win()
             return
@@ -185,23 +201,23 @@ class GameManager:
         betAmount: int = player.stacks[stackIndex].bet
         print(colored("\n🔥 Blackjack !", "green"))
         if len(player.stacks[stackIndex]) == 2:
-            player.totalMoney += betAmount * 1.5
-            print(colored(f"✅ + {betAmount * 1.5}€", 'green'))
+            moneyAmount: int = betAmount * 1.5
+            self.announce_player_win(player, moneyAmount)
         else:
-            player.totalMoney += betAmount
-            print(colored(f"✅ + {betAmount}€", 'green'))
+            moneyAmount: int = betAmount
+            self.announce_player_win(player, moneyAmount)
         player.stacks[stackIndex].kill()
             
     def process_dead(self, player: Player, stackIndex: int) -> None:
         """Process the dead of a player"""
         betAmount: int = player.stacks[stackIndex].bet
-        print(colored(f"\n💀 Stack n°{stackIndex} exceeded 21!", "red"))
-        print(colored(f"❌ - {betAmount}€", 'red'))
-        player.totalMoney -= betAmount
+        print(colored(f"\n💀 Player {player.username} | Stack n°{stackIndex} of  exceeded 21!", "red")) # TODO : améliorer golabalement la console pour préciser clairement quel joueur joue
+        self.announce_player_loss(player, betAmount)
         player.stacks[stackIndex].kill()
     
     def display_table(self) -> None: # TODO : Peut être faire en sorte que une ligne précise à qui est le tour de jouer (joueur ou croupier)
         """Display the game table"""
+        os.system('cls')
         print(colored("\n==================== GAME TABLE ====================", "yellow"))
 
         # Affichage du croupier
@@ -217,6 +233,12 @@ class GameManager:
             print(colored(f"\n👤 Player {i} - Money: {player.totalMoney}€", "blue"))
             for stackIndex, stack in player.stacks.items():
                 if stack.value == 21:
+                    stack.uncolor_cards()
+                    print(colored(f"  - Stack n°{stackIndex}: {stack.cards} | Total: {stack.value} | Bet: {stack.bet}€", "green"))
+                    continue
+                if stack.value > 21:
+                    stack.uncolor_cards()
+                    print(colored(f"  - Stack n°{stackIndex}: {stack.cards} | Total: {stack.value} | Bet: {stack.bet}€", "red"))
                     continue
                 cards = stack.cards
                 total = stack.value
