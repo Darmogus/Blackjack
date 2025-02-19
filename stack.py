@@ -1,6 +1,3 @@
-# --- Internal librairies ---
-from card import Card
-
 
 # --- Clases ---
 class Stack(list):

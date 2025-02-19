@@ -236,9 +236,7 @@ class GameManager:
             
     def process_dead(self, player: Player, stackIndex: int) -> None:
         """Process the dead of a player"""
-        betAmount: int = player.stacks[stackIndex].bet
         print(colored(f"\n💀 Player {player.username} | Stack n°{stackIndex} of  exceeded 21!", "red"))
-        self.announce_player_loss(player, betAmount)
         player.stacks[stackIndex].kill()
     
     def display_table(self) -> None:
