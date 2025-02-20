@@ -18,8 +18,8 @@ class PlayerActions(Enum):
 
 # --- Classes ---
 class Player:
-    def __init__(self, username: str, bet: int = 0, totalMoney: int = 1000) -> None:
-        self.stacks: dict[int, Stack] = {0: Stack(bet)}
+    def __init__(self, username: str, totalMoney: int = 1000) -> None:
+        self.stacks: dict[int, Stack] = {}
         self.totalMoney: int = totalMoney
         self.username: str = username
         
@@ -30,6 +30,12 @@ class Player:
     @property
     def isAlive(self):
         return any([stack.isAlive for stack in self.stacks.values()])
+    
+    def reset_stacks(self):
+        self.stacks = {}
+        
+    def set_initial_stack(self, bet: int) -> None:
+        self.stacks[0] = Stack(bet)
         
     def pick_card(self, deck: Deck, stackIndex: int = 0) -> None:
         """Pick a card and add it to a stack"""
@@ -44,7 +50,7 @@ class Player:
                 actions.append(PlayerActions.SPLIT)
         return actions
         
-    def choose_action(self, stack_index: int) -> PlayerActions:
+    def choose_action(self, stack_index: int) -> PlayerActions | None:
         """Choose an action to do on a given stack"""
         possibleActions: list[PlayerActions] = self.get_possible_actions(stack_index)
         possibleActionsValues: list[str] = [action.value for action in possibleActions]
@@ -54,8 +60,7 @@ class Player:
                 if actionInput in possibleActionsValues:
                     break
             except KeyboardInterrupt:
-                print("Vous avez appuyé sur Ctrl+C")
-                exit()
+                return None
             except:
                 print("Erreur de saisie")
             

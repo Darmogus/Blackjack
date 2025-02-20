@@ -9,10 +9,10 @@ from card import Card, CardValues, CardSuits
 class Deck(list):
     def __init__(self):
         super().__init__()
-        self.generate()
     
     def generate(self):
         """Generate a deck of 52 cards """
+        self.clear()
         for suit in CardSuits:
             for value in CardValues:
                 self.append(Card(value, suit))

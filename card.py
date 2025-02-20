@@ -51,9 +51,9 @@ class Card:
         """Return a string representation of the card dynamically"""
         if self.hidden:
             return colored("??", "grey")
-        if not self.colored:
-            return f"{self.base_value} {self.suit.value}"
-        return colored(f"{self.base_value} {self.suit.value}", self.SUITS_COLORS[self.suit])
+        if self.colored:
+            return colored(f"{self.base_value} {self.suit.value}", self.SUITS_COLORS[self.suit])
+        return f"{self.base_value} {self.suit.value}"
 
     def hide(self) -> None:
         """Hide the card"""
@@ -69,7 +69,7 @@ class Card:
     def __repr__(self) -> str:
         return self.display
 
-    # --- Comparisons ---
+    # --- Comparisons between cards---
     def __lt__(self, other) -> bool:
         return isinstance(other, Card) and self.value < other.value
 
