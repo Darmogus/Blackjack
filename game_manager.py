@@ -331,9 +331,3 @@ class GameManager:
             self.play()
             input("\nPress Enter to continue...")
         self.end_game()
-                    
-
-# --- Tests ---
-if __name__ == '__main__':
-    game = GameManager(3)
-    game.run()
